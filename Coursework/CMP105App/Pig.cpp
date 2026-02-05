@@ -34,11 +34,21 @@ Pig::Pig(sf::Vector2f worldSize)
 
 	m_currentAnimation = &m_walkDown;
 	setTextureRect(m_currentAnimation->getCurrentFrame());
+
+	setCollider(true);
+	setCollisionBox(2.f, 2.f, 60.f, 60.f);
+
 }
 
 Pig::~Pig()
 {
 }
+
+void Pig::collisionResponse(GameObject& collider)
+{
+	std::cout << "smashed into the sheep\n";
+}
+
 
 void Pig::setRandomDirection()
 {

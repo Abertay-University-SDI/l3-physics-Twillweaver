@@ -13,13 +13,20 @@ public:
 	void handleInput(float dt) override;
 	void update(float dt) override;
 
+	void setWorldSize(sf::Vector2f worldSize);
+
 private:
-	enum class Direction { UP, DOWN, LEFT, RIGHT, UP_RIGHT, DOWN_RIGHT, DOWN_LEFT, UP_LEFT, NONE };
-	Direction m_direction = Direction::NONE;
-	float m_speed = 300.0f;
-	float m_inputBuffer = 0.f;
-	const float INPUT_BUFFER_LENGTH = 0.1f;
-	const float APPROX_ONE_OVER_ROOT_TWO = 0.70710678f;	// 1 / sqrt(2)
+	const float ACCELERATION = 300.0f;   // rate of acceleration
+	const float DRAG_COEFFICIENT = 2.0f; // higher = more friction (mud)
+	
+	sf::Vector2f m_acceleration;
+
+	sf::Vector2f m_worldSize;
+
+	const float COEFF_OF_RESTITUTION = 0.8f; // energy retained after collision
+
+	void checkWallAndBounce();
+
 
 	Animation m_walkDown;
 	Animation m_walkUp;

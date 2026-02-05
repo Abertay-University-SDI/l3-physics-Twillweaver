@@ -12,6 +12,9 @@ public:
 	void update(float dt) override;
 	void setRandomDirection();
 
+	void collisionResponse(GameObject& collider) override;
+
+
 private:
 	// direction used for flipping animation on top/bottom
 	enum class Direction { UP, UP_RIGHT, RIGHT, DOWN_RIGHT, DOWN, DOWN_LEFT, LEFT, UP_LEFT, NONE };

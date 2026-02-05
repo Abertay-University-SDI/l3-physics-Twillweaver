@@ -1,4 +1,5 @@
 #include "Sheep.h"
+#include <iostream>
 
 Sheep::Sheep()
 {
@@ -32,137 +33,110 @@ Sheep::Sheep()
 
 	m_currentAnimation = &m_walkDown;
 	setTextureRect(m_currentAnimation->getCurrentFrame());
+
+	setCollider(true);
+	setCollisionBox(2.f, 2.f, 60.f, 60.f);
+
 }
 
 Sheep::~Sheep()
 {
 }
 
+void Sheep::setWorldSize(sf::Vector2f worldSize)
+{
+	m_worldSize = worldSize;
+}
+
 void Sheep::handleInput(float dt)
 {
-	// set sheep direction
-	// decrement and check the input buffer.
-	m_inputBuffer -= dt;
-	if (m_inputBuffer > 0)
-	{
-		// not long enough has passed since the last input change, so don't handle input
-		return;
-	}
-	// grab this to detect changes per frame for later
-	Direction last_dir = m_direction;
+	sf::Vector2f inputDir = { 0.f, 0.f };
 
-	// sheep brake
-	if (m_input->isKeyDown(sf::Keyboard::Scancode::Space))
-	{
-		m_direction = Direction::NONE;
-		return;
-	}
-
-	// Set 8-directional movement based on WASD
+	if (m_input->isKeyDown(sf::Keyboard::Scancode::W))
+		inputDir.y -= 1.f;
+	if (m_input->isKeyDown(sf::Keyboard::Scancode::S))
+		inputDir.y += 1.f;
 	if (m_input->isKeyDown(sf::Keyboard::Scancode::A))
+		inputDir.x -= 1.f;
+	if (m_input->isKeyDown(sf::Keyboard::Scancode::D))
+		inputDir.x += 1.f;
+
+	m_acceleration = inputDir * ACCELERATION;
+}
+void Sheep::checkWallAndBounce()
+{
+	sf::Vector2f pos = getPosition();
+	sf::Vector2f size = getSize();
+
+	// RIGHT wall
+	if (pos.x + size.x > m_worldSize.x && m_velocity.x > 0.f)
 	{
-		if (m_input->isKeyDown(sf::Keyboard::Scancode::W))
-		{
-			m_direction = Direction::UP_LEFT;
-			m_currentAnimation = &m_walkUpRight;
-			m_currentAnimation->setFlipped(true);
-		}
-
-
-		else if (m_input->isKeyDown(sf::Keyboard::Scancode::S))
-		{
-			m_direction = Direction::DOWN_LEFT;
-			m_currentAnimation = &m_walkDownRight;
-			m_currentAnimation->setFlipped(true);
-		}
-		else
-		{
-			m_direction = Direction::LEFT;
-			m_currentAnimation = &m_walkRight;
-			m_currentAnimation->setFlipped(true);
-		}
-
-	}
-	else if (m_input->isKeyDown(sf::Keyboard::Scancode::D))
-	{
-		if (m_input->isKeyDown(sf::Keyboard::Scancode::W))
-		{
-			m_direction = Direction::UP_RIGHT;
-			m_currentAnimation = &m_walkUpRight;
-			m_currentAnimation->setFlipped(false);
-		}
-		else if (m_input->isKeyDown(sf::Keyboard::Scancode::S))
-		{
-			m_direction = Direction::DOWN_RIGHT;
-			m_currentAnimation = &m_walkDownRight;
-			m_currentAnimation->setFlipped(false);
-		}
-		else
-		{
-			m_direction = Direction::RIGHT;
-			m_currentAnimation = &m_walkRight;
-			m_currentAnimation->setFlipped(false);
-		}
-
-	}
-	else
-	{
-		if (m_input->isKeyDown(sf::Keyboard::Scancode::W))
-		{
-			m_direction = Direction::UP;
-			m_currentAnimation = &m_walkUp;
-
-		}
-
-		else if (m_input->isKeyDown(sf::Keyboard::Scancode::S))
-		{
-			m_direction = Direction::DOWN;
-			m_currentAnimation = &m_walkDown;
-		}
+		pos.x = m_worldSize.x - size.x;   // snap inside
+		m_velocity.x = -m_velocity.x;
+		m_velocity *= COEFF_OF_RESTITUTION;
+		setPosition(pos);
 	}
 
-	// set input buffer if needed, this makes diagonal movement easier
-	if (m_direction != last_dir)
-		m_inputBuffer = INPUT_BUFFER_LENGTH;
+	// LEFT wall
+	if (pos.x < 0.f && m_velocity.x < 0.f)
+	{
+		pos.x = 0.f;
+		m_velocity.x = -m_velocity.x;
+		m_velocity *= COEFF_OF_RESTITUTION;
+		setPosition(pos);
+	}
+
+	// BOTTOM wall
+	if (pos.y + size.y > m_worldSize.y && m_velocity.y > 0.f)
+	{
+		pos.y = m_worldSize.y - size.y;
+		m_velocity.y = -m_velocity.y;
+		m_velocity *= COEFF_OF_RESTITUTION;
+		setPosition(pos);
+	}
+
+	// TOP wall
+	if (pos.y < 0.f && m_velocity.y < 0.f)
+	{
+		pos.y = 0.f;
+		m_velocity.y = -m_velocity.y;
+		m_velocity *= COEFF_OF_RESTITUTION;
+		setPosition(pos);
+	}
 }
 
 
 void Sheep::update(float dt)
 {
-	setTextureRect(m_currentAnimation->getCurrentFrame());
-	if (m_direction != Direction::NONE)
-		m_currentAnimation->animate(dt);
+	// v = u + at
+	m_velocity += m_acceleration * dt;
 
-	// move the sheep
-	// for diagonal movement
-	float diagonal_speed = m_speed * APPROX_ONE_OVER_ROOT_TWO * dt;
-	float orthog_speed = m_speed * dt;	// orthogonal movement
+	// apply drag (friction)
+	m_velocity -= m_velocity * DRAG_COEFFICIENT * dt;
 
-	switch (m_direction)
+	// s = vt
+	move(m_velocity * dt);
+
+	// wall collisions
+	checkWallAndBounce();
+
+	sf::Vector2f pos = getPosition();
+
+	if (pos.x + getSize().x > m_worldSize.x)
 	{
-	case Direction::UP:
-		move({ 0, -orthog_speed });
-		break;
-	case Direction::UP_RIGHT:
-		move({ diagonal_speed, -diagonal_speed });
-		break;
-	case Direction::RIGHT:
-		move({ orthog_speed,0 });
-		break;
-	case Direction::DOWN_RIGHT:
-		move({ diagonal_speed, diagonal_speed });
-		break;
-	case Direction::DOWN:
-		move({ 0, orthog_speed });
-		break;
-	case Direction::DOWN_LEFT:
-		move({ -diagonal_speed, diagonal_speed });
-		break;
-	case Direction::LEFT:
-		move({ -orthog_speed,0 });
-		break;
-	case Direction::UP_LEFT:
-		move({ -diagonal_speed, -diagonal_speed });
-		break;
+		std::cout << "Sheep left right boundary\n";
+	}
+
+	if (pos.y + getSize().y > m_worldSize.y)
+	{
+		std::cout << "Sheep left bottom boundary\n";
+	}
+
+
+	// update animation
+	if (std::abs(m_velocity.x) > 1.f || std::abs(m_velocity.y) > 1.f)
+	{
+		m_currentAnimation->animate(dt);
+		setTextureRect(m_currentAnimation->getCurrentFrame());
 	}
 }

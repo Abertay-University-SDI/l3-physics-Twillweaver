@@ -4,6 +4,8 @@
 #include "Framework/GameObject.h"
 #include "Pig.h"
 #include "Sheep.h"
+#include "Framework/Collision.h"
+
 
 class Level : BaseLevel {
 public:
