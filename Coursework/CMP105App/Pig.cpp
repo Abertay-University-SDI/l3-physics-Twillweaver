@@ -46,7 +46,7 @@ Pig::~Pig()
 
 void Pig::collisionResponse(GameObject& collider)
 {
-	std::cout << "smashed into the sheep\n";
+	std::cout << "Sheep smashed into a pig!\n";
 }
 
 

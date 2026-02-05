@@ -1,10 +1,24 @@
 #include "Level.h"
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <cmath>
+#include <filesystem>
 
 Level::Level(sf::RenderWindow& hwnd, Input& in) :
 	BaseLevel(hwnd, in)
 {
+	// 1. Load Font First (Crucial for SFML 3)
+	if (!m_font.openFromFile("font/arial.ttf")) {
+		std::cerr << "Failed to open font\n";
+	}
+
+	// 2. Initialize SpeedText using the loaded font
+	m_speedText = std::make_unique<SpeedText>(m_font);
+
 	// setup background
-	float background_size = 1024;
+	float background_size = 1024.f;
+
+	// background
 	if (!m_backgroundTexture.loadFromFile("gfx/field.png"))
 		std::cerr << "Yikes, no field\n";
 	m_background.setTexture(&m_backgroundTexture);
@@ -19,7 +33,6 @@ Level::Level(sf::RenderWindow& hwnd, Input& in) :
 	m_sheep.setSize({ 64,64 });
 
 	m_sheep.setWorldSize({ background_size, background_size });
-
 
 	// Setup pigs.
 	std::vector<sf::Vector2f> pig_locations = {	// top corners and bottom middle
@@ -37,10 +50,11 @@ Level::Level(sf::RenderWindow& hwnd, Input& in) :
 		new_pig->setPosition(pig_locations[i]);	
 		m_pigPointers.push_back(new_pig);
 	}
-	
+
 	m_gameOver = false;	// haven't lost yet.
 
 }
+
 
 // destructor for the level which clears up anything I have allocated to the heap 
 Level::~Level()
@@ -64,10 +78,21 @@ void Level::update(float dt)
 {
 	if (m_gameOver) return;
 
+	// update sheep and pigs
+	m_sheep.update(dt);
+	for (auto pig : m_pigPointers) pig->update(dt);
+
+	// Compute current speed
+	sf::Vector2f vel = m_sheep.getVelocity();
+	float speed = std::sqrt(vel.x * vel.x + vel.y * vel.y);
+
+	// Update the UI Text
+	if (m_speedText) {
+		m_speedText->text.setString("Speed: " + std::to_string(static_cast<int>(speed)));
+	}
+
 	// keep the sheep centered
-	sf::Vector2f pos = m_sheep.getPosition();
-	sf::View view = m_window.getView();
-	view.setCenter(pos);
+	sf::Vector2f camCenter = m_sheep.getPosition();
 
 	// camera shake
 	if (m_shakeTimer > 0.f)
@@ -77,13 +102,32 @@ void Level::update(float dt)
 		float offsetX = (rand() % 10 - 5.f) * SHAKE_INTENSITY;
 		float offsetY = (rand() % 10 - 5.f) * SHAKE_INTENSITY;
 
-		view.move({ offsetX, offsetY });
+		camCenter += { offsetX, offsetY };
 	}
 
+	// BOUND CAMERA TO FARMYARD
+	sf::Vector2f viewSize = m_window.getView().getSize();
+	float halfWidth = viewSize.x / 2.f;
+	float halfHeight = viewSize.y / 2.f;
+
+	// Clamp X
+	if (camCenter.x - halfWidth < 0.f)
+		camCenter.x = halfWidth;
+	else if (camCenter.x + halfWidth > m_background.getSize().x)
+		camCenter.x = m_background.getSize().x - halfWidth;
+
+	// Clamp Y
+	if (camCenter.y - halfHeight < 0.f)
+		camCenter.y = halfHeight;
+	else if (camCenter.y + halfHeight > m_background.getSize().y)
+		camCenter.y = m_background.getSize().y - halfHeight;
+
+	// Apply view
+	sf::View view = m_window.getView();
+	view.setCenter(camCenter);
 	m_window.setView(view);
 
-	m_sheep.update(dt);
-	
+	// handle collisions
 	for (auto pig : m_pigPointers)
 	{
 		pig->update(dt);
@@ -104,9 +148,22 @@ void Level::update(float dt)
 void Level::render()
 {
 	beginDraw();
+
+	// world camera
 	m_window.draw(m_background);
 	for (auto pig : m_pigPointers) m_window.draw(*pig);
 	m_window.draw(m_sheep);
+
+	// Switch to static UI view for the speed text
+	sf::View worldView = m_window.getView();
+	m_window.setView(m_window.getDefaultView()); // Reset view to draw UI in fixed position
+
+	if (m_speedText) {
+		m_window.draw(m_speedText->text);
+	}
+
+	m_window.setView(worldView); // Restore world view
+
 	endDraw();
 }
 

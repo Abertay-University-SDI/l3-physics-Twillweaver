@@ -203,6 +203,9 @@ sfml-network.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <ClInclude Include="Pig.h" />
     <ClInclude Include="Sheep.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="font\arial.ttf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

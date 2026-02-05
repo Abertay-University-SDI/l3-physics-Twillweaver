@@ -143,6 +143,13 @@ void Sheep::update(float dt)
 	// apply drag (friction)
 	m_velocity -= m_velocity * DRAG_COEFFICIENT * dt;
 
+	// Clamp to max speed
+	float speed = std::sqrt(m_velocity.x * m_velocity.x + m_velocity.y * m_velocity.y);
+	if (speed > MAX_SPEED)
+	{
+		m_velocity = (m_velocity / speed) * MAX_SPEED; // normalize and scale
+	}
+
 	// s = vt
 	move(m_velocity * dt);
 

@@ -19,7 +19,7 @@ public:
 
 
 private:
-	const float ACCELERATION = 500.0f;   // rate of acceleration
+	const float ACCELERATION = 400.0f;   // rate of acceleration
 	const float DRAG_COEFFICIENT = 0.80f; // higher = more friction (mud)
 	
 	sf::Vector2f m_acceleration;
@@ -27,6 +27,9 @@ private:
 	sf::Vector2f m_worldSize;
 
 	const float COEFF_OF_RESTITUTION = 0.8f; // energy retained after collision
+
+	// sheep speed
+	const float MAX_SPEED = 400.f;  // units per second
 
 	void checkWallAndBounce();
 
