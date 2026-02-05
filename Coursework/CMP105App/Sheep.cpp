@@ -105,6 +105,35 @@ void Sheep::checkWallAndBounce()
 	}
 }
 
+void Sheep::collisionResponse(GameObject& collider)
+{
+	// Lazy bounce: invert velocity
+	m_velocity = -m_velocity;
+
+	// Lose energy on impact
+	m_velocity *= COEFF_OF_RESTITUTION;
+
+	// measure the speed after a bounce
+	float speedSq = m_velocity.x * m_velocity.x + m_velocity.y * m_velocity.y;
+
+	// fush distance is influenced by the speed of the collision
+	float pushFactor;
+
+	// push threshold (50 units/sec)
+	if (speedSq < SLOW_COLLISION_SPEED_SQ)
+	{
+		// slow collison = big shove
+		pushFactor = SLOW_PUSH_FACTOR;
+	}
+	else
+	{
+		// fast collsion = slow shove
+		pushFactor = FAST_PUSH_FACTOR;
+	}
+	// push the sheep clear out of the way
+	move(m_velocity * pushFactor);
+}
+
 
 void Sheep::update(float dt)
 {

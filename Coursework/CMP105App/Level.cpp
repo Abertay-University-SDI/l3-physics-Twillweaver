@@ -68,6 +68,18 @@ void Level::update(float dt)
 	sf::Vector2f pos = m_sheep.getPosition();
 	sf::View view = m_window.getView();
 	view.setCenter(pos);
+
+	// camera shake
+	if (m_shakeTimer > 0.f)
+	{
+		m_shakeTimer -= dt;
+
+		float offsetX = (rand() % 10 - 5.f) * SHAKE_INTENSITY;
+		float offsetY = (rand() % 10 - 5.f) * SHAKE_INTENSITY;
+
+		view.move({ offsetX, offsetY });
+	}
+
 	m_window.setView(view);
 
 	m_sheep.update(dt);
@@ -76,10 +88,14 @@ void Level::update(float dt)
 	{
 		pig->update(dt);
 
-		// ---- COLLISION CHECK ----
+		// collision check
 		if (Collision::checkBoundingBox(*pig, m_sheep))
 		{
 			pig->collisionResponse(m_sheep);
+			m_sheep.collisionResponse(*pig);
+
+			// camera shake
+			m_shakeTimer = SHAKE_TIME;
 		}
 	}
 }

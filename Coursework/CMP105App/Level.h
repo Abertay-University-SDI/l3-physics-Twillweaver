@@ -30,4 +30,10 @@ private:
 	sf::Texture m_sheepTexture;
 	std::vector<Pig*> m_pigPointers;
 	Sheep m_sheep;
+
+	// camera shake
+	float m_shakeTimer = 0.f;
+	const float SHAKE_TIME = 0.2f;
+	const float SHAKE_INTENSITY = 3.f; // tweakable
+
 };
