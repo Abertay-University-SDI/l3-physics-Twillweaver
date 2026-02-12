@@ -34,5 +34,8 @@ private:
 	const float WALK_SPEED = 100.0f;
 	const float PIG_THINKING_TIME = 2.0f; // Time between pig event. 2s as default
 	const int GRAZE_CHANCE = 40; // % chance of stopping to graze. 40 as default
-};
 
+	float m_hitTimer = 0.0f;
+	const float FLASH_DURATION = 0.2f;
+
+};

@@ -46,6 +46,12 @@ Pig::~Pig()
 
 void Pig::collisionResponse(GameObject& collider)
 {
+	// Trigger the flash effect
+	m_hitTimer = FLASH_DURATION;
+
+	// Set hit colour
+	this->setFillColor(sf::Color(255, 100, 100, 255));
+
 	std::cout << "Sheep smashed into a pig!\n";
 }
 
@@ -142,6 +148,17 @@ void Pig::setRandomDirection()
 
 void Pig::update(float dt)
 {
+	// Handle hit flash timer
+	if (m_hitTimer > 0.0f)
+	{
+		m_hitTimer -= dt;
+		if (m_hitTimer <= 0.0f)
+		{
+			// Reset to fully opaque/normal color
+			this->setFillColor(sf::Color::White);
+		}
+	}
+
     // tick down
     m_decisionTimer -= dt;
 
