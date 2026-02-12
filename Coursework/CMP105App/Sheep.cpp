@@ -137,41 +137,66 @@ void Sheep::collisionResponse(GameObject& collider)
 
 void Sheep::update(float dt)
 {
-	// v = u + at
+	// 1. Physics: Velocity, Drag, and Move
 	m_velocity += m_acceleration * dt;
-
-	// apply drag (friction)
 	m_velocity -= m_velocity * DRAG_COEFFICIENT * dt;
 
-	// Clamp to max speed
 	float speed = std::sqrt(m_velocity.x * m_velocity.x + m_velocity.y * m_velocity.y);
-	if (speed > MAX_SPEED)
-	{
-		m_velocity = (m_velocity / speed) * MAX_SPEED; // normalize and scale
+	if (speed > MAX_SPEED) {
+		m_velocity = (m_velocity / speed) * MAX_SPEED;
 	}
 
-	// s = vt
 	move(m_velocity * dt);
-
-	// wall collisions
 	checkWallAndBounce();
 
-	sf::Vector2f pos = getPosition();
-
-	if (pos.x + getSize().x > m_worldSize.x)
+	// 2. Directional Animation Switching
+	// We only update the animation if the sheep is actually moving
+	if (speed > 10.f)
 	{
-		std::cout << "Sheep left right boundary\n";
-	}
+		// Calculate angle in degrees: Right = 0, Down = 90, Left = 180, Up = -90
+		float angle = std::atan2(m_velocity.y, m_velocity.x) * 180.f / 3.14159f;
 
-	if (pos.y + getSize().y > m_worldSize.y)
-	{
-		std::cout << "Sheep left bottom boundary\n";
-	}
+		if (angle > -22.5f && angle <= 22.5f) {
+			m_currentAnimation = &m_walkRight;
+			m_currentAnimation->setFlipped(false);
+		}
+		else if (angle > 22.5f && angle <= 67.5f) {
+			m_currentAnimation = &m_walkDownRight;
+			m_currentAnimation->setFlipped(false);
+		}
+		else if (angle > 67.5f && angle <= 112.5f) {
+			m_currentAnimation = &m_walkDown;
+			m_currentAnimation->setFlipped(false);
+		}
+		else if (angle > 112.5f && angle <= 157.5f) {
+			m_currentAnimation = &m_walkDownRight;
+			m_currentAnimation->setFlipped(true); // Left-Down mirror
+		}
+		else if (angle > 157.5f || angle <= -157.5f) {
+			m_currentAnimation = &m_walkRight;
+			m_currentAnimation->setFlipped(true); // Left mirror
+		}
+		else if (angle > -157.5f && angle <= -112.5f) {
+			m_currentAnimation = &m_walkUpRight;
+			m_currentAnimation->setFlipped(true); // Left-Up mirror
+		}
+		else if (angle > -112.5f && angle <= -67.5f) {
+			m_currentAnimation = &m_walkUp;
+			m_currentAnimation->setFlipped(false);
+		}
+		else if (angle > -67.5f && angle <= -22.5f) {
+			m_currentAnimation = &m_walkUpRight;
+			m_currentAnimation->setFlipped(false);
+		}
 
+		// 3. Dynamic Animation Speed
+		// Logic: Faster sheep = lower 'frameSpeed' value (faster cycling)
+		// Base delay is 0.25s. At max speed, we want it closer to 0.08s.
+		float speedRatio = speed / MAX_SPEED;
+		float dynamicFrameSpeed = 0.3f - (speedRatio * 0.22f);
+		m_currentAnimation->setFrameSpeed(dynamicFrameSpeed);
 
-	// update animation
-	if (std::abs(m_velocity.x) > 1.f || std::abs(m_velocity.y) > 1.f)
-	{
+		// 4. Finalize Animation Frame
 		m_currentAnimation->animate(dt);
 		setTextureRect(m_currentAnimation->getCurrentFrame());
 	}
